@@ -172,9 +172,8 @@ CORS_ALLOW_HEADERS = [*default_headers]
 # ------------------------------------------------------------------------------
 # if USE_TZ:
     # CELERY_TIMEZONE = TIME_ZONE
-# CELERY_BROKER_URL = env.str("CELERY_BROKER_URL")
+CELERY_BROKER_URL = env.str("CELERY_BROKER_URL")
 CELERY_TIMEZONE = 'Asia/Kolkata'
-CELERY_BROKER_URL = "redis://localhost:6379/0"
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
@@ -217,10 +216,10 @@ APP_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 # Email settings
 # -------------------------------------------------------------------------------
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = "smtp.gmail.com"
-DEFAULT_EMAIL_FROM = "shivarajendran1999@gmail.com"
-EMAIL_HOST_USER = "shivarajendran1999@gmail.com"
-EMAIL_HOST_PASSWORD = "ymvuujeanqwxwjzk"
+EMAIL_HOST = env.str("HOST")
+DEFAULT_EMAIL_FROM = env.str("HOST_USER")
+EMAIL_HOST_USER = env.str("HOST_USER")
+EMAIL_HOST_PASSWORD = env.str("HOST_PASSWORD")
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 PASSWORD_RESET_TIMEOUT = 14400
