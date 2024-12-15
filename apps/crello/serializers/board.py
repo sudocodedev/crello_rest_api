@@ -8,6 +8,7 @@ from apps.crello.models import (
 from apps.access.serializers import (
     UserSerializer,
 )
+from .list import ListDetailSerializer
 from django.db.models import Count
 from rest_framework import serializers
 
@@ -39,6 +40,7 @@ class BoardListSerializer(AppReadOnlyModelSerializer):
 
 class BoardDetailSerializer(AppReadOnlyModelSerializer):
     created_by = UserSerializer(read_only=True)
+    lists = ListDetailSerializer(many=True, read_only=True)
 
     class Meta:
         model = Board
@@ -48,7 +50,7 @@ class BoardDetailSerializer(AppReadOnlyModelSerializer):
             'description',
             'created_by',
             'created', 'modified',
+            'lists',
         ]
 
-        # not fully completed include list, card details as well in the serializer
 

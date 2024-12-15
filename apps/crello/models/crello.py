@@ -84,10 +84,8 @@ class Card(BaseModel):
         return f"{self.name} -> List: {self.card_list.name} -> Board: {self.card_list.board.name}"
     
 
-class Comment(models.Model):
+class Comment(BaseModel):
     comment = models.TextField(null=False, blank=False)
-    commented_on = models.DateTimeField(auto_now=True)
-    commented_at = models.DateTimeField(auto_now_add=True)
 
     ## foreign key fields
     commented_by = models.ForeignKey(User, 
@@ -97,7 +95,7 @@ class Comment(models.Model):
     )
 
     card = models.ForeignKey(Card, 
-                             related_name="cards", 
+                             related_name="comments", 
                              on_delete=models.SET_DEFAULT, 
                              **COMMON_BLANK_AND_NULLABLE_FIELD_CONFIG
     )

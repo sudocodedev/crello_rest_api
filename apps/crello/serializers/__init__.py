@@ -13,9 +13,14 @@ from .card import (
     CardCUDSerializer,
     CardDetailSerializer,
     CardImageUploadSerializer,
+    CardFileUploadSerializer,
 )
 from .label import (
     LabelCUDSerializer,
     LabelDetailSerializer,
     LabelListSerializer,
+)
+from .comment import (
+    CommentCUDSerializer,
+    CommentListSerializer,
 )

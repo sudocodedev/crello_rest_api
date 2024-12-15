@@ -12,6 +12,10 @@ from apps.crello.views import (
     CardAssigneeCUDAPIView,
     CardChangeOrderByPositionAPIView,
     CardImageUploadAPIView,
+    CardFileUploadAPIView,
+    CardCommentAllAPIView,
+    CardCommentDetailedAPIView,
+    Pattern,
 )
 from apps.common.router import router
 from django.urls import path
@@ -21,6 +25,7 @@ app_name = "crello"
 LABEL_URL_PREFIX = "api/labels/"
 BOARD_URL_PREFIX = "api/boards/"
 LIST_URL_PREFIX = "api/lists/"
+CARD_URL_PREFIX = "api/cards/"
 
 # Label
 router.register(f"{LABEL_URL_PREFIX}read", LabelReadOnlyViewset)
@@ -34,6 +39,8 @@ router.register(f"{BOARD_URL_PREFIX}cud", BoardCUDViewset)
 router.register(f"{LIST_URL_PREFIX}read", ListReadOnlyViewset)
 
 urlpatterns = [
+    path("api/pattern/", Pattern.as_view(), name="print-pattern"),
+
     # Board to List - GET, POST
     path(f"{BOARD_URL_PREFIX}<int:board_id>/lists/", BoardListAllAPIView.as_view(), name="board_to_lists"),
     
@@ -55,7 +62,17 @@ urlpatterns = [
     # change card order - b/w src & destn list - POST
     path(f"{LIST_URL_PREFIX}<int:list_id>/cards/<int:card_id>/move_list/<int:destn_list_id>/position/<int:position>/", CardChangeOrderByPositionAPIView.as_view(), name="change_card_src_to_destn"),
 
-    # Card Image upload - PATCH
+    # Card Image upload & delete - POST, DELETE
     path(f"{LIST_URL_PREFIX}<int:list_id>/cards/<int:card_id>/image_upload/", CardImageUploadAPIView.as_view(), name="card_image_uploader"),
+
+    # Card File upload & delete - POST, DELETE
+    path(f"{LIST_URL_PREFIX}<int:list_id>/cards/<int:card_id>/file_upload/", CardFileUploadAPIView.as_view(), name="card_file_uploader"),
+
+    # Card to comment - GET, POST
+    path(f"{CARD_URL_PREFIX}<int:card_id>/comments/", CardCommentAllAPIView.as_view(), name="card_comment"),
+
+    # Card to comment - GET, POST, DELETE - get, modify, delete requested comment
+    path(f"{CARD_URL_PREFIX}<int:card_id>/comments/<int:comment_id>/", CardCommentDetailedAPIView.as_view(), name="card_comment_detail"),
+
 ] 
 urlpatterns += router.urls

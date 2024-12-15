@@ -8,6 +8,7 @@ from apps.crello.models import (
 from apps.access.serializers import (
     UserSerializer,
 )
+from .comment import CommentListSerializer
 from rest_framework import serializers
 
 class CardCUDSerializer(AppWriteOnlyModelSerializer):
@@ -22,10 +23,25 @@ class CardCUDSerializer(AppWriteOnlyModelSerializer):
             'due_date',
         ]
 
-class CardImageUploadSerializer(AppWriteOnlyModelSerializer):
-    class Meta(AppWriteOnlyModelSerializer.Meta):
+class CardImageUploadSerializer(serializers.ModelSerializer):
+    class Meta():
         model = Card
         fields = ['card_image']
+
+    def update(self, instance, validated_data):
+        instance.card_image = validated_data.get('card_image', instance.card_image)
+        instance.save()
+        return instance
+
+class CardFileUploadSerializer(serializers.ModelSerializer):
+    class Meta():
+        model = Card
+        fields = ['card_file']
+
+    def update(self, instance, validated_data):
+        instance.card_file = validated_data.get('card_file', instance.card_file)
+        instance.save()
+        return instance
 
 class CardListSerializer(AppReadOnlyModelSerializer):
     assignee = UserSerializer(read_only=True)
@@ -51,6 +67,7 @@ class CardDetailSerializer(AppReadOnlyModelSerializer):
     label_name = serializers.CharField(source='label.name')
     list_name = serializers.CharField(source='card_list.name')
     board_name = serializers.CharField(source="card_list.board.name")
+    comments = CommentListSerializer(many=True, read_only=True)
 
     class Meta:
         model = Card
@@ -69,4 +86,5 @@ class CardDetailSerializer(AppReadOnlyModelSerializer):
             'card_file',
             'board_name',
             'list_name',
+            'comments',
         ]

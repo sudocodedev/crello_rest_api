@@ -13,7 +13,13 @@ from apps.crello.models import (
 from django.db.models import Max, F
 from rest_framework.response import Response
 from rest_framework import status
+from apps.crello.tasks import print_pattern
 
+class Pattern(AppAPIView):
+
+    def get(self, request, *args, **kwargs):
+        print_pattern.delay(iterations=10)
+        return Response({'detail': "done"}, status=status.HTTP_200_OK)        
 
 # helpers
 def create_list(board_id:int, name:str):

@@ -5,7 +5,9 @@ from apps.common.serializers import (
 from apps.crello.models import (
     List,
 )
+from .card import CardListSerializer
 from rest_framework import serializers
+
 
 class ListCUDSerializer(AppWriteOnlyModelSerializer):
     class Meta(AppWriteOnlyModelSerializer.Meta):
@@ -38,6 +40,7 @@ class ListListSerializer(AppReadOnlyModelSerializer):
 
 class ListDetailSerializer(AppReadOnlyModelSerializer):
     board_name = serializers.CharField(source='board.name')
+    cards = CardListSerializer(many=True, read_only=True)
 
     class Meta:
         model = List
@@ -47,5 +50,5 @@ class ListDetailSerializer(AppReadOnlyModelSerializer):
             'position',
             'board_name',
             'created', 'modified',
+            'cards',
         ]
-        # incomplete, include card details as well

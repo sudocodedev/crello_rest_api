@@ -3,6 +3,7 @@ from pathlib import Path
 
 import environ
 from corsheaders.defaults import default_headers
+from celery.schedules import crontab
 
 # General
 # ------------------------------------------------------------------------------
@@ -26,7 +27,7 @@ env.read_env(str(ROOT_DIR / ".env"))
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "UTC"
 USE_I18N = True
-USE_TZ = False
+USE_TZ = True
 
 # Apps
 # ------------------------------------------------------------------------------
@@ -47,6 +48,8 @@ THIRD_PARTY_APPS = [
     # Phone Number Field
     "phonenumber_field",
     # For Static files
+    "django_celery_results",
+    "django_celery_beat",
 ]
 
 CUSTOM_APPS = [
@@ -168,13 +171,28 @@ CORS_ALLOW_HEADERS = [*default_headers]
 # Celery
 # ------------------------------------------------------------------------------
 # if USE_TZ:
-#     CELERY_TIMEZONE = TIME_ZONE
+    # CELERY_TIMEZONE = TIME_ZONE
 # CELERY_BROKER_URL = env.str("CELERY_BROKER_URL")
-# CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-# CELERY_ACCEPT_CONTENT = ["json"]
-# CELERY_TASK_SERIALIZER = "json"
-# CELERY_RESULT_SERIALIZER = "json"
-# CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+CELERY_TIMEZONE = 'Asia/Kolkata'
+CELERY_BROKER_URL = "redis://localhost:6379/0"
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+
+CELERY_BEAT_SCHEDULE = {
+    'send_reminder_emails_everyday_at_9_am': {
+        'task': "apps.crello.tasks.send_remainder_mail_at_9_am",
+        'schedule': crontab(hour=9, minute=0),
+    },
+    'send_reminder_emails_everyday_at_6_pm': {
+        'task': "apps.crello.tasks.send_remainder_mail_at_6_pm",
+        'schedule': crontab(hour=18, minute=0),
+    }
+}
+
 
 # App Configurations
 # ------------------------------------------------------------------------------
@@ -194,3 +212,15 @@ APP_DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S"
 #         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
 #     },
 # }
+
+
+# Email settings
+# -------------------------------------------------------------------------------
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = "smtp.gmail.com"
+DEFAULT_EMAIL_FROM = "shivarajendran1999@gmail.com"
+EMAIL_HOST_USER = "shivarajendran1999@gmail.com"
+EMAIL_HOST_PASSWORD = "ymvuujeanqwxwjzk"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+PASSWORD_RESET_TIMEOUT = 14400

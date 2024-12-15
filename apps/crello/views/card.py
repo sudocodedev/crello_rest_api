@@ -6,12 +6,15 @@ from apps.crello.serializers import (
     CardDetailSerializer, 
     CardCUDSerializer, 
     CardImageUploadSerializer,
+    CardFileUploadSerializer,
 )
 from apps.crello.models import (
     List, Board, Card, Label
 )
 from django.db.models import Max, F, Q
 from django.contrib.auth import get_user_model
+from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from apps.common.helpers import (
@@ -263,25 +266,74 @@ class CardChangeOrderByPositionAPIView(AppAPIView):
         
         return Response({'detail': "card moved successfully"}, status=status.HTTP_200_OK)
 
-class CardImageUploadAPIView(AppAPIView):
+class CardImageUploadAPIView(APIView):
+    serializer_class = CardImageUploadSerializer
+    parser_classes = [MultiPartParser, FormParser,]
 
-    def patch(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         data = request.data
 
         if 'card_image' not in data:
-            return self.send_error_response({'detail': f"Invalid params in payload, use 'image'"})
+            return self.send_error_response({'detail': f"Invalid params in payload, use 'card_image'"})
         
         card_id = kwargs.get('card_id')
         instance = Card.objects.get_or_none(id=card_id)
         if instance is None:
             return Response({'detail': "requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
         
-        serializer = CardImageUploadSerializer(instance, data={"card_image": request.FILES.get('card_image')}, partial=True)
+        serializer = self.serializer_class(instance=instance, data=request.data)
 
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
     
+    def delete(self, request, *args, **kwargs):
+        card_id = kwargs.get('card_id')
+        instance = Card.objects.get_or_none(id=card_id)
+        if instance is None:
+            return Response({'detail': "requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
+
+        image_url = instance.card_image.url
+        instance.card_image = None
+        instance.save()
+
+        return Response({'detail': f"{image_url} deleted successfully from card"}, status=status.HTTP_200_OK)
+    
+
+class CardFileUploadAPIView(APIView):
+    serializer_class = CardFileUploadSerializer
+    parser_classes = [MultiPartParser, FormParser,]
+
+    def post(self, request, *args, **kwargs):
+        data = request.data
+
+        if 'card_file' not in data:
+            return self.send_error_response({'detail': f"Invalid params in payload, use 'card_file'"})
+
+        card_id = kwargs.get('card_id')        
+        instance = Card.objects.get_or_none(id=card_id)
+        if instance is None:
+            return Response({'detail': "requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = self.serializer_class(instance=instance, data=data)
+
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        
+        return Response({"detail": serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+        
+    def delete(self, request, *args, **kwargs):
+        card_id = kwargs.get('card_id')
+        instance = Card.objects.get_or_none(id=card_id)
+        if instance is None:
+            return Response({'detail': "requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
+
+        file_url = instance.card_file.url
+        instance.card_file = None
+        instance.save()
+
+        return Response({'detail': f"{file_url} deleted successfully from card"}, status=status.HTTP_200_OK)
 

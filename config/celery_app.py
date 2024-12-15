@@ -24,3 +24,16 @@ app.autodiscover_tasks()
 # Ref: https://github.com/celery/celery/issues/5992#issuecomment-781857785
 for _import_string in []:
     app.register_task(import_string(_import_string)())
+
+'''
+CELERY_BEAT_SCHEDULE = {
+    'sample-task': {
+        'task': 'myapp.tasks.sample_task',  # Path to your task
+        'schedule': 60.0,  # Interval in seconds (e.g., 60.0 seconds)
+    },
+}
+'''
+
+@app.task(bind=True)
+def debug_task(self):
+    print(f'Request: {self.request!r}')

@@ -11,6 +11,7 @@ from .list import (
     BoardListAllAPIView,
     BoardListDetailedAPIView,
     ChangeListPositionAPIView,
+    Pattern,
 )
 from .card import (
     ListCardAllAPIView,
@@ -18,4 +19,9 @@ from .card import (
     CardAssigneeCUDAPIView,
     CardChangeOrderByPositionAPIView,
     CardImageUploadAPIView,
+    CardFileUploadAPIView,
+)
+from .comment import (
+    CardCommentAllAPIView,
+    CardCommentDetailedAPIView,
 )
