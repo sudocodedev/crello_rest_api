@@ -23,10 +23,15 @@ class ListCUDSerializer(AppWriteOnlyModelSerializer):
 
 class ListListSerializer(AppReadOnlyModelSerializer):
     cards_count = serializers.SerializerMethodField()
-    board_name = serializers.CharField(source='board.name')
+    board_name = serializers.SerializerMethodField()
 
     def get_cards_count(self, obj):
         return obj.cards.count()
+    
+    def get_board_name(self, obj):
+        if obj.board:
+            return obj.board.name
+        return None
     
     class Meta:
         model = List
@@ -39,8 +44,16 @@ class ListListSerializer(AppReadOnlyModelSerializer):
         ]
 
 class ListDetailSerializer(AppReadOnlyModelSerializer):
-    board_name = serializers.CharField(source='board.name')
     cards = CardListSerializer(many=True, read_only=True)
+    board_name = serializers.SerializerMethodField()
+
+    def get_cards_count(self, obj):
+        return obj.cards.count()
+    
+    def get_board_name(self, obj):
+        if obj.board:
+            return obj.board.name
+        return None
 
     class Meta:
         model = List

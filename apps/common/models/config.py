@@ -10,3 +10,6 @@ COMMON_BLANK_AND_NULLABLE_FIELD_CONFIG = {  # user for Form/app based stuff
     **COMMON_NULLABLE_FIELD_CONFIG,
     "blank": True,
 }
+
+MAX_IMAGE_HEIGHT = 500
+MAX_IMAGE_WIDTH = 500

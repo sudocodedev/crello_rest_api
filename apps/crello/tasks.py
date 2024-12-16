@@ -28,7 +28,7 @@ def send_remainder_mail_at_6_pm(self):
             email_body = "Looks like you have some assigned tasks under your name!\n\n"
             email_body += "Don't forget to update the status of your tasks today without fail :)"
         else:
-            email_body = "Relax and have some of cup of your favourite beverage!\n\n"
+            email_body = "Relax and have some cup of your favourite beverage!\n\n"
             email_body += "You have don't have any assigned tasks under your name :)"
 
         email_body += "\n\nThanks & Regards,\nCrello Bot"

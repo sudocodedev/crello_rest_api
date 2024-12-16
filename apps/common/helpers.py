@@ -4,7 +4,7 @@ import secrets
 import string
 
 def is_all_list1_in_list2(list1: list, list2: list):
-    """Given two lists, this will check if any element of list1 is in list2."""
+    """Given two lists, this will check if all elements of list1 is in list2."""
 
     return all(v in list2 for v in list1)
 

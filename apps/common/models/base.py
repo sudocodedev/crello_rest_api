@@ -4,9 +4,40 @@ from contextlib import suppress
 from django.conf import settings
 from django.core.exceptions import FieldDoesNotExist
 from django.db import models
+from PIL import Image
+from io import BytesIO
+from django.core.files import File
+from django.core.files.base import ContentFile
 
 from apps.common.managers import BaseObjectManagerQuerySet
-from apps.common.models import COMMON_BLANK_AND_NULLABLE_FIELD_CONFIG
+from apps.common.models import (
+    COMMON_BLANK_AND_NULLABLE_FIELD_CONFIG,
+    MAX_IMAGE_WIDTH,
+    MAX_IMAGE_HEIGHT,
+)
+from apps.common.helpers import random_n_token
+
+
+class ResizeImageMixin:
+    def resize(self, image_field:models.ImageField):
+        size = (MAX_IMAGE_HEIGHT, MAX_IMAGE_WIDTH,)
+        
+        im = Image.open(image_field) # getting original image
+        im_format = image_field.name.split('.')[-1]
+        im_name = image_field.name.split('.')[0]
+
+        source_image = im.convert('RGB')
+        source_image.thumbnail(size=size) # resizing the image
+
+        output = BytesIO()
+        source_image.save(output, format=im_format.upper())
+        output.seek(0)
+
+        content_file = ContentFile(output.read()) # read output from bytestream and create content file
+        file = File(content_file)
+
+        random_name = f"{im_name}_{random_n_token(5)}.{im_format}"
+        image_field.save(random_name, file, save=False)
 
 
 class BaseModel(models.Model):

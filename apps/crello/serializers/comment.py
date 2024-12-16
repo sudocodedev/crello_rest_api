@@ -20,7 +20,12 @@ class CommentCUDSerializer(AppWriteOnlyModelSerializer):
 
 class CommentListSerializer(AppReadOnlyModelSerializer):
     commented_by = UserSerializer(read_only=True)
-    card_name = serializers.CharField(source='card.name')
+    card_name = serializers.SerializerMethodField()
+
+    def get_card_name(self, obj):
+        if obj.card:
+            return obj.card.name
+        return None
 
     class Meta:
         model = Comment

@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from apps.common.models import (
     BaseModel,
+    ResizeImageMixin,
     COMMON_BLANK_AND_NULLABLE_FIELD_CONFIG,
     COMMON_CHAR_FIELD_MAX_LENGTH
 )
@@ -35,7 +36,7 @@ class List(BaseModel):
     def __str__(self):
         return f"{self.name} -> Board: {self.board.name}"
     
-class Card(BaseModel):
+class Card(BaseModel, ResizeImageMixin):
     name = models.CharField(max_length=COMMON_CHAR_FIELD_MAX_LENGTH, 
                             blank=False, null=False
     )
@@ -82,6 +83,11 @@ class Card(BaseModel):
 
     def __str__(self):
         return f"{self.name} -> List: {self.card_list.name} -> Board: {self.card_list.board.name}"
+    
+    def save(self, *args, **kwargs):
+        if self.pk is None:
+            self.resize(self.card_image)
+        super().save(*args, **kwargs)
     
 
 class Comment(BaseModel):

@@ -23,7 +23,9 @@ class Pattern(AppAPIView):
 
 # helpers
 def create_list(board_id:int, name:str):
-    board = Board.objects.get(id=board_id)
+    board = Board.objects.get_or_none(id=board_id)
+    if board is None:
+        return -1
 
     # getting the maximum position among the lists that belonged to the board object
     max_position = board.lists.aggregate(mx_position=Max('position'))['mx_position'] or 0
@@ -31,8 +33,11 @@ def create_list(board_id:int, name:str):
     new_list = List.objects.create(name=name, board=board, position=max_position + 1)
     return new_list
 
-def delete_list(list_id:int) -> None:
-    instance = List.objects.get(id=list_id)
+def delete_list(list_id:int) -> int | None:
+    instance = List.objects.get_or_none(id=list_id)
+    if instance is None:
+        return -1
+
     position = instance.position
 
     # update positions of the lists after list to be deleted
@@ -40,7 +45,10 @@ def delete_list(list_id:int) -> None:
     instance.delete()
 
 def change_list_position(list_id:int, new_position:int):
-    instance = List.objects.get(id=list_id)
+    instance = List.objects.get_or_none(id=list_id)
+    if instance is None:
+        return -1
+
     current_position = instance.position
     
     if new_position < 1 or new_position > List.objects.count():
@@ -86,6 +94,9 @@ class BoardListAllAPIView(AppAPIView):
 
         board_id = kwargs.get('board_id')
         queryset = create_list(board_id=board_id, name=data.get('name'))
+        if queryset == -1:
+            return self.send_error_response({'detail': "requested board doesn't exist"})
+
         serializer = ListListSerializer(instance=queryset)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -146,7 +157,9 @@ class BoardListDetailedAPIView(AppAPIView):
 
     def delete(self, request, *args, **kwargs):
         list_id = kwargs.get('list_id')
-        delete_list(list_id=list_id)
+        res = delete_list(list_id=list_id)
+        if res == -1:
+            return self.send_error_response({'detail': "requested list doesn't exist"})
         return Response({'detail':"list deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
     
 
@@ -158,7 +171,9 @@ class ChangeListPositionAPIView(AppAPIView):
 
         res = change_list_position(list_id=list_id, new_position=position)
 
-        if not res:
+        if res == -1:
+            return self.send_error_response({'detail': "requested list doesn't exist"})
+        elif not res:
             return self.send_error_response({'detail': "invalid position"})
         
         return Response({'detail':"list reordered successfully"}, status=status.HTTP_200_OK)

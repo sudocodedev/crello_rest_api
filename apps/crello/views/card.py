@@ -9,7 +9,8 @@ from apps.crello.serializers import (
     CardFileUploadSerializer,
 )
 from apps.crello.models import (
-    List, Board, Card, Label
+    List, Board, Card, Label,
+    PRIORITY,
 )
 from django.db.models import Max, F, Q
 from django.contrib.auth import get_user_model
@@ -28,7 +29,17 @@ User = get_user_model()
 card_payload_fields = ['name', 'description', 'priority', 'label', 'due_date']
 
 def create_card(list_id:int, data:dict):
-    instance = List.objects.get(id=list_id)
+    priority = data.get('priority').lower()
+    if priority not in PRIORITY:
+        return -1
+
+    label_instance = Label.objects.get_or_none(id=data.get('label'))
+    if label_instance is None:
+        return -2
+
+    instance = List.objects.get_or_none(id=list_id)
+    if instance is None:
+        return -3
 
     # getting the maximum position among the cards that belonged to list object
     max_position = instance.cards.aggregate(mx_position=Max('position'))['mx_position'] or 0
@@ -36,8 +47,8 @@ def create_card(list_id:int, data:dict):
     new_card = Card.objects.create(
         name=data.get('name'),
         description=data.get('description'),
-        priority=data.get('priority', 'low'),
-        label=Label.objects.get(id=data.get('label')),
+        priority=priority,
+        label=label_instance,
         position=max_position + 1,
         due_date=data.get('due_date'),
         card_list=instance,
@@ -84,17 +95,14 @@ def get_assignee(data:dict):
 def move_card_to_other_list(card_id:int, src_list_id:int, destn_list_id, new_position:int) -> int:
     card_instance = Card.objects.get_or_none(id=card_id)
     if card_instance is None:
-        # return Response({'detail':"requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
         return -1
     
     src_list_instance = List.objects.get_or_none(id=src_list_id)
     if src_list_instance is None:
-        # return Response({'detail':"requested source list doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
         return -2
     
     destn_list_instance = List.objects.get_or_none(id=destn_list_id)
     if destn_list_instance is None:
-        # return Response({'detail':"requested destination list doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
         return -3
     
     src_position = card_instance.position
@@ -133,11 +141,22 @@ class ListCardAllAPIView(AppAPIView):
         data = request.data
         data_keys = list(data.keys())
 
-        if not is_all_list1_in_list2(data_keys, card_payload_fields):
+        print(data_keys)
+        print(is_all_list1_in_list2(card_payload_fields, data_keys))
+
+        if not is_all_list1_in_list2(card_payload_fields, data_keys):
             return self.send_error_response({'detail': f"Invalid payload, not all params were present, refer {card_payload_fields}"})
 
         list_id = kwargs.get('list_id')
+        
         queryset = create_card(list_id=list_id, data=data)
+        if queryset == -1:
+            return self.send_error_response({'detail': f"unsupported priority type, use these intead {PRIORITY}"})
+        elif queryset == -2:
+            return self.send_error_response({'detail': "provided label doesn't exist"})
+        elif queryset == -3:
+            return self.send_error_response({'detail': "requested list not found"})
+
         serializer = CardListSerializer(instance=queryset)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
@@ -162,7 +181,7 @@ class ListCardDetailedAPIView(AppAPIView):
     def patch(self, request, *args, **kwargs):
         data = request.data
 
-        if not is_any_or_list1_in_list2(list(data.keys()), card_payload_fields):
+        if not is_any_or_list1_in_list2(card_payload_fields, list(data.keys())):
             return self.send_error_response({'detail': f"Invalid params in payload, refer {card_payload_fields}"})
         
         card_id = kwargs.get('card_id')
@@ -180,7 +199,7 @@ class ListCardDetailedAPIView(AppAPIView):
     def put(self, request, *args, **kwargs):
         data = request.data
 
-        if not is_all_list1_in_list2(list(data.keys()), card_payload_fields):
+        if not is_all_list1_in_list2(card_payload_fields, list(data.keys())):
             return self.send_error_response({'detail': f"Invalid params in payload, refer {card_payload_fields}"})
 
         card_id = kwargs.get('card_id')
