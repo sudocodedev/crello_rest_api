@@ -14,7 +14,7 @@ from rest_framework import status
 
 
 class LabelReadOnlyViewset(AppModelListAPIViewSet):
-    queryset = Label.objects.all().order_by('id')
+    queryset = Label.objects.active().order_by('id')
     serializer_class = LabelListSerializer
 
     def retrieve(self, request, *args, **kwargs):
@@ -26,6 +26,6 @@ class LabelCUDViewset(AppModelCUDAPIViewSet):
     """
     for payload, use only "name"
     """
-    queryset = Label.objects.all().order_by('id')
+    queryset = Label.objects.active().order_by('id')
     serializer_class = LabelCUDSerializer
     

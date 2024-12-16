@@ -9,7 +9,7 @@ from apps.crello.serializers import (
     CardFileUploadSerializer,
 )
 from apps.crello.models import (
-    List, Board, Card, Label,
+    List, Card, Label,
     PRIORITY,
 )
 from django.db.models import Max, F, Q
@@ -33,16 +33,16 @@ def create_card(list_id:int, data:dict):
     if priority not in PRIORITY:
         return -1
 
-    label_instance = Label.objects.get_or_none(id=data.get('label'))
+    label_instance = Label.objects.get_or_none1(id=data.get('label'))
     if label_instance is None:
         return -2
 
-    instance = List.objects.get_or_none(id=list_id)
+    instance = List.objects.get_or_none1(id=list_id)
     if instance is None:
         return -3
 
     # getting the maximum position among the cards that belonged to list object
-    max_position = instance.cards.aggregate(mx_position=Max('position'))['mx_position'] or 0
+    max_position = instance.cards.active().aggregate(mx_position=Max('position'))['mx_position'] or 0
 
     new_card = Card.objects.create(
         name=data.get('name'),
@@ -57,14 +57,14 @@ def create_card(list_id:int, data:dict):
     return new_card
 
 def delete_card(card_id:int) -> bool:
-    instance = Card.objects.get_or_none(id=card_id)
+    instance = Card.objects.get_or_none1(id=card_id)
 
     if instance is None:
         return False
     
     position = instance.position
 
-    Card.objects.filter(position__gt=position).update(position=F('position')-1)
+    Card.objects.active().filter(position__gt=position).update(position=F('position')-1)
     instance.delete()
     return True
 
@@ -75,13 +75,13 @@ def get_assignee(data:dict):
     
     try:
         assignee_id = int(data.get('assignee'))
-        user = User.objects.get_or_none(id=assignee_id)
+        user = User.objects.get_or_none1(id=assignee_id)
 
         if user is None:
             return None
                 
     except ValueError as e:
-        user_list = User.objects.filter(
+        user_list = User.objects.active().filter(
             Q(email__iexact=data.get('assignee')) | 
             Q(phone_number=data.get('assignee'))
         )
@@ -93,20 +93,20 @@ def get_assignee(data:dict):
     return user
 
 def move_card_to_other_list(card_id:int, src_list_id:int, destn_list_id, new_position:int) -> int:
-    card_instance = Card.objects.get_or_none(id=card_id)
+    card_instance = Card.objects.get_or_none1(id=card_id)
     if card_instance is None:
         return -1
     
-    src_list_instance = List.objects.get_or_none(id=src_list_id)
+    src_list_instance = List.objects.get_or_none1(id=src_list_id)
     if src_list_instance is None:
         return -2
     
-    destn_list_instance = List.objects.get_or_none(id=destn_list_id)
+    destn_list_instance = List.objects.get_or_none1(id=destn_list_id)
     if destn_list_instance is None:
         return -3
     
     src_position = card_instance.position
-    max_position = destn_list_instance.cards.count()
+    max_position = destn_list_instance.cards.active().count()
 
     if new_position > max_position:
         new_position = max_position + 1
@@ -114,8 +114,8 @@ def move_card_to_other_list(card_id:int, src_list_id:int, destn_list_id, new_pos
     elif new_position <= 0:
         new_position = 1
         
-    destn_list_instance.cards.filter(position__gte=new_position).update(position=F('position')+1)
-    src_list_instance.cards.filter(position__gt=src_position).update(position=F('position')-1)
+    destn_list_instance.cards.active().filter(position__gte=new_position).update(position=F('position')+1)
+    src_list_instance.cards.active().filter(position__gt=src_position).update(position=F('position')-1)
 
     card_instance.position = new_position
     card_instance.card_list = destn_list_instance
@@ -128,12 +128,12 @@ class ListCardAllAPIView(AppAPIView):
     
     def get(self, request, *args, **kwargs):
         list_id = kwargs.get('list_id')
-        instance = List.objects.get_or_none(id=list_id)
+        instance = List.objects.get_or_none1(id=list_id)
         
         if instance is None:
             return Response({'detail':"requested list doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        queryset = instance.cards.all()
+        queryset = instance.cards.active()
         serializer = CardListSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -164,12 +164,12 @@ class ListCardDetailedAPIView(AppAPIView):
 
     def get(self, request, *args, **kwargs):
         list_id, card_id = kwargs.get('list_id'), kwargs.get('card_id')
-        instance = List.objects.get_or_none(id=list_id)
+        instance = List.objects.get_or_none1(id=list_id)
 
         if instance is None:
             return Response({'detail':"requested list doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
         
-        queryset = Card.objects.get_or_none(id=card_id, card_list=instance)
+        queryset = Card.objects.get_or_none1(id=card_id, card_list=instance)
 
         if queryset is None:
             return Response({'detail':"requested card not found"}, status=status.HTTP_404_NOT_FOUND)
@@ -185,7 +185,7 @@ class ListCardDetailedAPIView(AppAPIView):
             return self.send_error_response({'detail': f"Invalid params in payload, refer {card_payload_fields}"})
         
         card_id = kwargs.get('card_id')
-        instance = Card.objects.get_or_none(id=card_id)
+        instance = Card.objects.get_or_none1(id=card_id)
 
         if instance is None:
             return Response({'detail':"requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
@@ -203,7 +203,7 @@ class ListCardDetailedAPIView(AppAPIView):
             return self.send_error_response({'detail': f"Invalid params in payload, refer {card_payload_fields}"})
 
         card_id = kwargs.get('card_id')
-        instance = Card.objects.get_or_none(id=card_id)
+        instance = Card.objects.get_or_none1(id=card_id)
 
         if instance is None:
             return Response({'detail':"requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
@@ -243,7 +243,7 @@ class CardAssigneeCUDAPIView(AppAPIView):
             return Response({'detail': "requested user doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
 
         card_id = kwargs.get('card_id')
-        instance = Card.objects.get_or_none(id=card_id)
+        instance = Card.objects.get_or_none1(id=card_id)
 
         if instance is None:
             return Response({'detail':"requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
@@ -256,7 +256,7 @@ class CardAssigneeCUDAPIView(AppAPIView):
 
     def delete(self, request, *args, **kwargs):
         card_id = kwargs.get('card_id')
-        instance = Card.objects.get_or_none(id=card_id)
+        instance = Card.objects.get_or_none1(id=card_id)
 
         if instance is None:
             return Response({'detail':"requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
@@ -296,7 +296,7 @@ class CardImageUploadAPIView(APIView):
             return self.send_error_response({'detail': f"Invalid params in payload, use 'card_image'"})
         
         card_id = kwargs.get('card_id')
-        instance = Card.objects.get_or_none(id=card_id)
+        instance = Card.objects.get_or_none1(id=card_id)
         if instance is None:
             return Response({'detail': "requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
         
@@ -310,7 +310,7 @@ class CardImageUploadAPIView(APIView):
     
     def delete(self, request, *args, **kwargs):
         card_id = kwargs.get('card_id')
-        instance = Card.objects.get_or_none(id=card_id)
+        instance = Card.objects.get_or_none1(id=card_id)
         if instance is None:
             return Response({'detail': "requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -332,7 +332,7 @@ class CardFileUploadAPIView(APIView):
             return self.send_error_response({'detail': f"Invalid params in payload, use 'card_file'"})
 
         card_id = kwargs.get('card_id')        
-        instance = Card.objects.get_or_none(id=card_id)
+        instance = Card.objects.get_or_none1(id=card_id)
         if instance is None:
             return Response({'detail': "requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
         
@@ -346,7 +346,7 @@ class CardFileUploadAPIView(APIView):
         
     def delete(self, request, *args, **kwargs):
         card_id = kwargs.get('card_id')
-        instance = Card.objects.get_or_none(id=card_id)
+        instance = Card.objects.get_or_none1(id=card_id)
         if instance is None:
             return Response({'detail': "requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
 

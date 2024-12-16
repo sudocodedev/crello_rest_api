@@ -103,6 +103,26 @@ class BaseObjectManagerQuerySet(QuerySet):
             ValidationError,  # invalid UUID
         ):
             return None
+        
+    def get_or_none1(self, *args, **kwargs):
+        """
+        Get the object based on the given **kwargs and 
+            is_deleted=False & is_active=True
+        If not present returns None.
+        Note: Expects a single instance.
+        """
+
+        try:
+            return self.get(is_active=True, is_deleted=False, *args, **kwargs)
+        # if does not exist or if idiotic values like id=None is passed
+        except (
+            ObjectDoesNotExist,
+            AttributeError,
+            ValueError,
+            MultipleObjectsReturned,
+            ValidationError,  # invalid UUID
+        ):
+            return None
 
     def delete(self):
         """

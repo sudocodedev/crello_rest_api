@@ -15,7 +15,7 @@ from rest_framework import status
 
 # helpers
 def create_comment(card_id:int, comment:str, user):
-    card = Card.objects.get_or_none(id=card_id)
+    card = Card.objects.get_or_none1(id=card_id)
     if card is None:
         return None
     
@@ -31,11 +31,11 @@ class CardCommentAllAPIView(AppAPIView):
 
     def get(self, request, *args, **kwargs):
         card_id = kwargs.get('card_id')
-        instance = Card.objects.get_or_none(id=card_id)
+        instance = Card.objects.get_or_none1(id=card_id)
         if instance is None:
             return Response({'detail': "requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        queryset = instance.comments.all()
+        queryset = instance.comments.active()
         serializer = CommentListSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
     
@@ -61,11 +61,11 @@ class CardCommentDetailedAPIView(AppAPIView):
         card_id = kwargs.get('card_id')
         comment_id = kwargs.get('comment_id')
 
-        card_instance = Card.objects.get_or_none(id=card_id)
+        card_instance = Card.objects.get_or_none1(id=card_id)
         if card_instance is None:
             return Response({'detail': "requested card doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
 
-        queryset = Comment.objects.get_or_none(id=comment_id, card=card_instance)
+        queryset = Comment.objects.get_or_none1(id=comment_id, card=card_instance)
         if queryset is None :
             return Response({'detail': "comment not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -81,7 +81,7 @@ class CardCommentDetailedAPIView(AppAPIView):
         comment_id = kwargs.get('comment_id')
 
         
-        instance = Comment.objects.get_or_none(id=comment_id)
+        instance = Comment.objects.get_or_none1(id=comment_id)
         if instance is None:
             return Response({'detail': "comment not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -95,7 +95,7 @@ class CardCommentDetailedAPIView(AppAPIView):
         
     def delete(self, request, *args, **kwargs):
         comment_id = kwargs.get('comment_id')
-        instance = Comment.objects.get_or_none(id=comment_id)
+        instance = Comment.objects.get_or_none1(id=comment_id)
 
         if instance is None:
             return Response({'detail': "comment not found"}, status=status.HTTP_404_NOT_FOUND)

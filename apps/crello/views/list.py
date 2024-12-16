@@ -23,7 +23,7 @@ class Pattern(AppAPIView):
 
 # helpers
 def create_list(board_id:int, name:str):
-    board = Board.objects.get_or_none(id=board_id)
+    board = Board.objects.get_or_none1(id=board_id)
     if board is None:
         return -1
 
@@ -34,30 +34,30 @@ def create_list(board_id:int, name:str):
     return new_list
 
 def delete_list(list_id:int) -> int | None:
-    instance = List.objects.get_or_none(id=list_id)
+    instance = List.objects.get_or_none1(id=list_id)
     if instance is None:
         return -1
 
     position = instance.position
 
     # update positions of the lists after list to be deleted
-    List.objects.filter(position__gt=position).update(position=F('position')-1)
+    List.objects.active().filter(position__gt=position).update(position=F('position')-1)
     instance.delete()
 
 def change_list_position(list_id:int, new_position:int):
-    instance = List.objects.get_or_none(id=list_id)
+    instance = List.objects.get_or_none1(id=list_id)
     if instance is None:
         return -1
 
     current_position = instance.position
     
-    if new_position < 1 or new_position > List.objects.count():
+    if new_position < 1 or new_position > List.objects.active().count():
         return False
     
     if new_position < current_position:
-        List.objects.filter(position__gte=new_position, position__lt=current_position).update(position=F('position')+1)
+        List.objects.active().filter(position__gte=new_position, position__lt=current_position, is_deleted=False).update(position=F('position')+1)
     elif new_position > current_position:
-        List.objects.filter(position__gt=current_position, position__lte=new_position).update(position=F('position')-1)
+        List.objects.active().filter(position__gt=current_position, position__lte=new_position, is_deleted=False).update(position=F('position')-1)
 
     instance.position = new_position
     instance.save()
@@ -65,7 +65,7 @@ def change_list_position(list_id:int, new_position:int):
     return True
 
 class ListReadOnlyViewset(AppModelListAPIViewSet):
-    queryset = List.objects.all().order_by('id')
+    queryset = List.objects.active().order_by('id')
     serializer_class = ListListSerializer
 
     def retrieve(self, request, *args, **kwargs):
@@ -77,11 +77,11 @@ class BoardListAllAPIView(AppAPIView):
 
     def get(self, request, *args, **kwargs):
         board_id = kwargs.get('board_id')
-        board = Board.objects.get_or_none(id=board_id)
+        board = Board.objects.get_or_none1(id=board_id)
         if board is None:
             return Response({'detail': "requested board doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
         
-        queryset = board.lists.all()
+        queryset = board.lists.active()
         serializer = ListListSerializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
@@ -106,12 +106,12 @@ class BoardListDetailedAPIView(AppAPIView):
     def get(self, request, *args, **kwargs):
         board_id = kwargs.get('board_id')
         list_id = kwargs.get('list_id')
-        board = Board.objects.get_or_none(id=board_id)
+        board = Board.objects.get_or_none1(id=board_id)
 
         if board is None:
             return Response({'detail': "requested board doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
         
-        queryset = List.objects.get_or_none(id=list_id, board=board)
+        queryset = List.objects.get_or_none1(id=list_id)
         if queryset is None:
             return Response({'detail': "requested list doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -125,7 +125,7 @@ class BoardListDetailedAPIView(AppAPIView):
         if 'name' not in data:
             return self.send_error_response({'detail': "Invalid param in payload"})
         
-        instance = List.objects.get_or_none(id=list_id)
+        instance = List.objects.get_or_none1(id=list_id)
         if instance is None:
             return Response({'detail': "requested list doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -142,7 +142,7 @@ class BoardListDetailedAPIView(AppAPIView):
         if 'name' not in data:
             return self.send_error_response({'detail': "Invalid param in payload"})
         
-        instance = List.objects.get_or_none(id=list_id)
+        instance = List.objects.get_or_none1(id=list_id)
         if instance is None:
             return Response({'detail': "requested list doesn't exist"}, status=status.HTTP_404_NOT_FOUND)
 

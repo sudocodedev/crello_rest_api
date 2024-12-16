@@ -15,7 +15,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 class BoardReadOnlyViewset(AppModelListAPIViewSet):
-    queryset = Board.objects.all().order_by('id')
+    queryset = Board.objects.active().order_by('id')
     serializer_class = BoardListSerializer
 
     def retrieve(self, request, *args, **kwargs):
@@ -27,5 +27,5 @@ class BoardCUDViewset(AppModelCUDAPIViewSet):
     """
     for payload, use "name", "description"
     """
-    queryset = Board.objects.all().order_by('id')
+    queryset = Board.objects.active().order_by('id')
     serializer_class = BoardCUDSerializer
