@@ -1,20 +1,13 @@
-from apps.common.views.generic import (
-    AppModelCUDAPIViewSet,
-    AppModelListAPIViewSet,
-)
-from apps.crello.serializers import (
-    LabelListSerializer, LabelCUDSerializer, LabelDetailSerializer
-)
-from apps.crello.models import (
-    Label,
-)
-
-from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.response import Response
+
+from apps.common.views.generic import AppModelCUDAPIViewSet, AppModelListAPIViewSet
+from apps.crello.models import Label
+from apps.crello.serializers import LabelCUDSerializer, LabelDetailSerializer, LabelListSerializer
 
 
 class LabelReadOnlyViewset(AppModelListAPIViewSet):
-    queryset = Label.objects.active().order_by('id')
+    queryset = Label.objects.active().order_by("id")
     serializer_class = LabelListSerializer
 
     def retrieve(self, request, *args, **kwargs):
@@ -22,10 +15,9 @@ class LabelReadOnlyViewset(AppModelListAPIViewSet):
         serializer = LabelDetailSerializer(instance=data)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-class LabelCUDViewset(AppModelCUDAPIViewSet):
-    """
-    for payload, use only "name"
-    """
-    queryset = Label.objects.active().order_by('id')
+
+class LabelCUDViewSet(AppModelCUDAPIViewSet):
+    """CUD view for label object."""
+
+    queryset = Label.objects.all()
     serializer_class = LabelCUDSerializer
-    

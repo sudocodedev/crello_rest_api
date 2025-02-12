@@ -1,12 +1,6 @@
-from .crello import (
-    Board, List, Card, Comment
-)
-from .generic import (
-    Label,
-)
-from .config import (
-    PRIORITY,
-    ACCEPTABLE_IMAGE_EXTENSIONS,
-    ACCEPTABLE_IMAGE_MAX_MEMORY_SIZE,
-    ACCEPTABLE_FILE_EXTENSIONS,
-)
+# flake8: noqa
+from .tag import Tag
+from .board import Board
+from .list import List
+from .card import Card
+from .comment import Comment
